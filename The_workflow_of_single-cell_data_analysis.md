@@ -398,6 +398,7 @@ violin <- wrap_plots(plots = plots, nrow=1)
 ggsave("QC/vlnplot_after_qc.pdf", plot = violin, width = 9, height = 8)
 ```
 ![](images/2021-10-24-21-53-23.png)
+
 关于核糖体和红细胞的质控根据需求选择是否需要，若需要，在上一步代码添加新的质控指标。
 ```r
 # 计算细胞中核糖体基因比例
