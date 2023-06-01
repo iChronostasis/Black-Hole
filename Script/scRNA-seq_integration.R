@@ -2,6 +2,8 @@
 ######################################################################
 # Method: 1.Seurat; 2.Harmnoy; 3.LIGER
 ## 1. Seurat
+# Enter commands in R (or R studio, if installed)
+  #install.packages('Seurat')
 # scRNA-seq integration can be used both to correct for technical differences between datasets 
 # (i.e. batch effect correction), and to perform comparative scRNA-seq analysis of across experimental conditions
   rm(list = ls())
@@ -18,28 +20,90 @@
   fig_dir <- "~/figures/"
   out_data_dir <- "~/out_data/"
 # get the sample name  
-  samples <- dir(in_data_dir)
+  samples <- dir(paste0(in_data_dir,"/data"))
+# get the sample group
+  sampleGroup <- read.table("sampleGroup.txt",header=T.sep="\t")
 # create seurat object:
   seurat_list <- lapply(samples, function(sample){
-    cur_data <- Read10X(paste0(in_data_dir,sample,'/outs/filtered_feature_bc_matrix/'))
+    cur_data <- Read10X(paste0(in_data_dir,"/data/",sample,'/outs/filtered_feature_bc_matrix/'))
     cur_seurat <- CreateSeuratObject(
       counts = cur_data,
       min.cells = 3,
       min.features = 200,
-      project = sample
+      project = sampleGroup$Group
     )
     cur_seurat$SampleID <- sample
     return(cur_seurat)
   })
-# assign the sample name
-  names(seurat_list) <- samples  
+# assign the sample name & sample group
+  for (i in 1:length(seurat_list)){
+    seurat_list[[i]]$group <- sampleGroup[i,2]
+    print(i)
+  }
+  names(seurat_list) <- samples   
+#############################################
+############################################# 
+########1.QC after merge multi-samples#######
+############################################# 
+############################################# 
+# Preprocess(QC after merge multi-samples)
+  dir.create(paste0(fig_dir,"/QC/","QC_after_merge"))
+## merge seurat object
+  seurat_obj <- merge(x=seurat_list[[1]], y=seurat_list[2:length(seurat_list)])
+## Calculate mito gene (ribosome gene or else) abundance percentage  
+  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^MT-")
   
+### If you need other quality control indicators,use the following code 
+### Ribosome gene
+  #seurat_obj[["percent.rb"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^RP[LS]")  
+  ### Erythrocyte gene
+  #HB.genes <- c("HBA1","HBA2","HBB","HBD","HBE1","HBG1","HBG2","HBM","HBQ1","HBZ")
+  #HB.genes <- CaseMatch(HB.genes, rownames(seurat_list[[i]])) 
+  #seurat_obj[["percent.HB"]] <- PercentageFeatureSet(object = seurat_obj, features = HB.genes)
+
+## Visualize QC metrics as a violin plot   
+  pdf(paste0(fig_dir,"/QC/QC_after_merge/violin_before_QC.pdf"), width=10, height=10)
+  # png(paste0(fig_dir, "pngs/qc_violin_plot.png"), width=10, height=10, res=250, units='in')
+  VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 2, pt.size=0, )
+  dev.off()
+  
+## Filter the outliers(according to the violinplot,or use the standard QC metrics)  
+### use the standard QC metrics to preprocess   
+  seurat_obj <- subset(seurat_obj, nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 10)
+
+## Visualize the QC result as a violin plot  
+  pdf(paste0(fig_dir,"/QC/QC_after_merge/violin_after_QC.pdf"), width=10, height=10)
+  # png(paste0(fig_dir, "pngs/qc_violin_plot.png"), width=10, height=10, res=250, units='in')
+  VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 2, pt.size=0, )
+  dev.off()
+#############################################  
+# Normalizing the data
+  seurat_obj <- NormalizeData(seurat_obj, normalization.method = "LogNormalize", scale.factor = 10000)
+# Identification of highly variable features
+  seurat_obj <- FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
+# Run the standard workflow for visualization and clustering
+  seurat_obj <- ScaleData(seurat_obj, verbose = FALSE)
+  seurat_obj <- RunPCA(seurat_obj, npcs = 30, verbose = FALSE)
+  seurat_obj <- RunUMAP(seurat_obj, reduction = "pca", dims = 1:30)
+  #seurat_obj <- RunTSNE(seurat_obj, npcs = 30, verbose = FALSE)
+  seurat_obj <- FindNeighbors(seurat_obj, reduction = "pca", dims = 1:30)
+  seurat_obj <- FindClusters(seurat_obj, resolution = 0.5) 
+# visualize the cluster before integrate
+  dir.create(paste0(fig_dir,"Visualization"))
+  p <- DimPlot(seurat_obj, reduction = "umap", group.by = "orig.ident")
+  ggsave(paste0(fig_dir,"Visualization/QC_after_merge_Before_integrate_cluster.pdf"), plot = p, width = 9, height = 8) 
 #############################################
+
 #############################################
+############################################# 
+######2.QC individually for each sample######
+############################################# 
+############################################# 
 # Preprocess(QC individually for each sample)
   dir.create(paste0(fig_dir,"QC"))
+  dir.create(paste0(fig_dir,"QC/","QC_for_each_sample"))
 ## Extract mitochondria gene list(some datasets have none mito genes,because of the cellranger preprocess)
-  rownames(seurat_list[[' ']]@assays$RNA@counts)[grep(pattern = "^MT",x = rownames(seurat_list[[' ']]@assays$RNA@counts))]
+  #rownames(seurat_list[[' ']]@assays$RNA@counts)[grep(pattern = "^MT",x = rownames(seurat_list[[' ']]@assays$RNA@counts))]
   ALL_mtgene <- lapply(samples, function(sample){
     grep(pattern = "^MT",x = rownames(seurat_list[[sample]]@assays$RNA@counts),value = TRUE)
   })
@@ -64,7 +128,7 @@
   plot.featrures = c("nFeature_RNA", "nCount_RNA","percent.mt") ###c("percent.rb", "percent.HB")
   for (i in samples){
     violin <- VlnPlot(object = seurat_list[[i]], features = plot.featrures, pt.size=0.1)
-    ggsave(paste0(fig_dir,"/QC/",'vlnplot_before_QC_',i,'.pdf') , plot = violin , width = 10, height = 8)
+    ggsave(paste0(fig_dir,"/QC/","QC_for_each_sample/",'vlnplot_before_QC_',i,'.pdf') , plot = violin , width = 10, height = 8)
     print(i)
   }
   
@@ -73,7 +137,7 @@
     plot1 <- FeatureScatter(object = seurat_list[[i]], feature1 = "nCount_RNA", feature2 = "percent.mt")
     plot2 <- FeatureScatter(object = seurat_list[[i]], feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
     plot <- plot1 + plot2
-    ggsave(paste0(fig_dir,"/QC/",'featurescatter_before_QC_',i,'.pdf') , plot = plot , width = 10, height = 8)
+    ggsave(paste0(fig_dir,"/QC/","QC_for_each_sample/",'featurescatter_before_QC_',i,'.pdf') , plot = plot , width = 10, height = 8)
     print(i)
   }
   
@@ -89,61 +153,42 @@
 ## Visualize the QC result as a violin plot  
   for (i in samples){
     violin <- VlnPlot(object = seurat_list[[i]], features = plot.featrures, pt.size=0.1)
-    ggsave(paste0(fig_dir,"/QC/",'vlnplot_after_QC_',i,'.pdf') , plot = violin , width = 10, height = 8)
+    ggsave(paste0(fig_dir,"/QC/","QC_for_each_sample/",'vlnplot_after_QC_',i,'.pdf') , plot = violin , width = 10, height = 8)
     print(i)
   }
 # merge seurat object
   seurat_obj <- merge(x=seurat_list[[1]], y=seurat_list[2:length(seurat_list)])
+#############################################  
+# Run the standard workflow for visualization and clustering
+  seurat_obj <- ScaleData(seurat_obj, verbose = FALSE)
+  seurat_obj <- RunPCA(seurat_obj, npcs = 30, verbose = FALSE)
+  seurat_obj <- RunUMAP(seurat_obj, reduction = "pca", dims = 1:30)
+  #seurat_obj <- RunTSNE(seurat_obj, npcs = 30, verbose = FALSE)
+  seurat_obj <- FindNeighbors(seurat_obj, reduction = "pca", dims = 1:30)
+  seurat_obj <- FindClusters(seurat_obj, resolution = 0.5) 
+# visualize the cluster before integrate
+  dir.create(paste0(fig_dir,"Visualization"))
+  p <- DimPlot(seurat_obj, reduction = "umap", group.by = "orig.ident")
+  ggsave(paste0(fig_dir,"Visualization/QC_for_each_sample_Before_integrate_cluster.pdf"), plot = p, width = 9, height = 8) 
+
+
 #############################################
 ############################################# 
-  
-# Preprocess(QC after merge multi-samples)
-  dir.create(paste0(fig_dir,"QC"))
-## merge seurat object
-  seurat_obj <- merge(x=seurat_list[[1]], y=seurat_list[2:length(seurat_list)])
-## Calculate mito gene (ribosome gene or else) abundance percentage  
-  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^MT-")
-  
-### If you need other quality control indicators,use the following code 
-### Ribosome gene
-  #seurat_obj[["percent.rb"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^RP[LS]")  
-  ### Erythrocyte gene
-  #HB.genes <- c("HBA1","HBA2","HBB","HBD","HBE1","HBG1","HBG2","HBM","HBQ1","HBZ")
-  #HB.genes <- CaseMatch(HB.genes, rownames(seurat_list[[i]])) 
-  #seurat_obj[["percent.HB"]] <- PercentageFeatureSet(object = seurat_obj, features = HB.genes)
-
-## Visualize QC metrics as a violin plot   
-  pdf(paste0(fig_dir,"/QC/violin_before_QC.pdf"), width=10, height=10)
-  # png(paste0(fig_dir, "pngs/qc_violin_plot.png"), width=10, height=10, res=250, units='in')
-  VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 2, pt.size=0, )
-  dev.off()
-  
-## Filter the outliers(according to the violinplot,or use the standard QC metrics)  
-### use the standard QC metrics to preprocess   
-  seurat_obj <- subset(seurat_obj, nFeature_RNA > 200 & nFeature_RNA < 10000 & percent.mt < 10)
-
-## Visualize the QC result as a violin plot  
-  pdf(paste0(fig_dir,"/QC/violin_after_QC.pdf"), width=10, height=10)
-  # png(paste0(fig_dir, "pngs/qc_violin_plot.png"), width=10, height=10, res=250, units='in')
-  VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 2, pt.size=0, )
-  dev.off()
-#############################################  
-  
+#############################################
+############################################# 
 # clean up
   rm(seurat_list)
   gc()
 # add metadata(when you have the file or you could make one if you need)
-  sample_metadata <- read.csv(file = "~/metaData.csv")
-  rownames(sample_metadata) <- sample_metadata$Sample.ID
-  cell_metadata <- sample_metadata[seurat_obj$SampleID,]
-  for(meta in names(cell_metadata)){
-    seurat_obj[[meta]] <- cell_metadata[[meta]]
-  }
-  
+  #sample_metadata <- read.csv(file = "~/metaData.csv")
+  #rownames(sample_metadata) <- sample_metadata$Sample.ID
+  #cell_metadata <- sample_metadata[seurat_obj$SampleID,]
+  #for(meta in names(cell_metadata)){
+    #seurat_obj[[meta]] <- cell_metadata[[meta]]
+  #}
 #############################################################    
 ######################### Integrate #########################
 #############################################################    
-  
 # split the dataset into a list of two seurat objects (EXPERIMENT and CTRL)
   seurat_obj.list <- SplitObject(seurat_obj, split.by = "orig.ident")
 
@@ -174,12 +219,11 @@
   Seurat.data.combined <- FindClusters(Seurat.data.combined, resolution = 0.6) 
   
 # Visualization
-  dir.create(paste0(fig_dir,"Visualization"))
   p1 <- DimPlot(Seurat.data.combined, reduction = "umap", group.by = "orig.ident")
   p2 <- DimPlot(Seurat.data.combined, reduction = "umap", split.by = "orig.ident")
   #p2 <- DimPlot(Seurat.data.combined, reduction = "umap", label = TRUE, repel = TRUE)
-  p<-p1 + p2
-  ggsave(paste0(fig_dir,"Visualization/cluster.pdf"), plot = p, width = 9, height = 8) 
+  ggsave(paste0(fig_dir,"Visualization/After_Integrate_cluster.pdf"), plot = p1, width = 9, height = 8) 
+  ggsave(paste0(fig_dir,"Visualization/After_Integrate_cluster_splitby_sample.pdf"), plot = p2, width = 20, height = 18)
   
 # Finding differentially expressed features (cluster biomarkers)
   DefaultAssay(Seurat.data.combined) <- "integrated"
@@ -187,25 +231,11 @@
   Seurat.data.combined.markers %>%
     group_by(cluster) %>%
     slice_max(n = 2, order_by = avg_log2FC)
-  
+## save the markers  
   saveRDS(Seurat.data.combined.markers,paste0(out_data_dir,"Seurat.data.combined.markers.rds"))
-  
-# Assigning cell type identity to clusters'
-## Or use (SingleR.R) or CellTyping.R .etc  
-## Seurat : Use canonical markers to easily match the unbiased clustering to known cell type
-### Featureplot：according to the representative marker genes in order to assign cell type identity to clusters'
-  FeaturePlot(Seurat.data.combined, features = c("MS4A1", "GNLY", "CD3E", "CD14", "FCER1A", "FCGR3A", "LYZ", "PPBP","CD8A"))
-### when you make sure , assign cell type identity to clusters'
-  dir.create(paste0(fig_dir,"Cell_typing"))
-  new.cluster.ids <- c("Naive CD4 T", "CD14+ Mono", "Memory CD4 T", "B", "CD8 T", "FCGR3A+ Mono",
-                       "NK", "DC", "Platelet")
-  names(new.cluster.ids) <- levels(Seurat.data.combined)
-  Seurat.data.combined <- RenameIdents(Seurat.data.combined, new.cluster.ids)
-  p <- DimPlot(Seurat.data.combined, reduction = "umap", label = TRUE,label.size = 8) + NoLegend()
-  ggsave(paste0(fig_dir,"Cell_typing/cell_typing_0.5.pdf"), plot = p, width = 9, height = 8) 
-# save the data  
-  saveRDS(Seurat.data.combined, file = paste0(out_data_dir,"Seurat.data.combined_final.rds"))
-  
+# save the Seurat object
+  saveRDS(Seurat.data.combined,paste0(out_data_dir,"Seurat.data.combined.rds"))
+
 ####################################################################################
 ########### After Assigning cell type identity to clusters #########################
 ############### Select the cluster for the further analysis ########################  

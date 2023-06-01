@@ -156,7 +156,7 @@
   plot_genes_in_pseudotime(cds_subset, color_by = "Time")
 
 
-### Finding Genes that Distinguish Celhttp://cole-trapnell-lab.github.io/monocle-release/images/vignette/plot_diff_res_multi-1.pngl Type or State
+### Finding Genes that Distinguish Cell Type or State http://cole-trapnell-lab.github.io/monocle-release/images/vignette/plot_diff_res_multi-1.png
   to_be_tested <- row.names(subset(fData(monocle),
                                    gene_short_name %in% c("UBC", "NCAM1", "ANPEP")))
   cds_subset <- monocle[to_be_tested,]
@@ -170,6 +170,27 @@
                     ncol = NULL,
                     plot_trend = TRUE)
   
+  
+### Visualize the expression changes of each cluster under pseudo-time (ridge plot)
+  library(ggridges)
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(forcats)
+  library(ggpubr)
+  df <- pData(cds) ## pData(cds)取出的是cds对象中cds@phenoData@data的内容
+  p4<-ggplot(df, aes(Pseudotime, y = cluster2, fill=cluster2)) +
+    geom_density_ridges(alpha=0.6,bins=20) +
+    geom_vline(xintercept = c(0,5,10),linetype=2)+
+    theme_ridges() + 
+    theme(legend.position="none",panel.spacing = unit(0.1, "lines"),strip.text.x = element_text(size = 8))+
+    theme(
+      panel.grid = element_blank()
+    )+
+    scale_fill_d3("category20")+
+    xlab("Pseudotime")
+  ggsave("cell_trajectory_T_density.pdf", p4, width = 10, height = 10)
+
 ### Finding Genes that Change as a Function of Pseudotime  
   to_be_tested <- row.names(subset(fData(monocle),
                                    gene_short_name %in% c("MYH3", "MEF2C", "CCNB2", "TNNT1")))
@@ -178,6 +199,7 @@
                                         fullModelFormulaStr = "~sm.ns(Pseudotime)")
   diff_test_res[,c("gene_short_name", "pval", "qval")]
   plot_genes_in_pseudotime(cds_subset, color_by = "Time")
+  
   
 ## Analyzing Branches in Single-Cell Trajectories
   BEAM_res <- BEAM(monocle, branch_point = 1, cores = 1)
@@ -198,6 +220,5 @@
                                  branch_point = 1,
                                  color_by = "Time",
                                  ncol = 1)
-  
 ######################################################################  
   
