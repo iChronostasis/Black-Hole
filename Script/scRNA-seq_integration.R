@@ -69,7 +69,7 @@
   
 ## Filter the outliers(according to the violinplot,or use the standard QC metrics)  
 ### use the standard QC metrics to preprocess   
-  seurat_obj <- subset(seurat_obj, nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 10)
+  seurat_obj <- subset(seurat_obj, nFeature_RNA > round(quantile(seurat_obj@meta.data[["nFeature_RNA"]],c(0.2))) & nFeature_RNA < round(quantile(seurat_obj@meta.data[["nFeature_RNA"]],c(0.8))) & percent.mt < 5)
 
 ## Visualize the QC result as a violin plot  
   pdf(paste0(fig_dir,"/QC/QC_after_merge/violin_after_QC.pdf"), width=10, height=10)
@@ -144,7 +144,7 @@
 ## Filter the outliers(according to the violinplot,or use the standard QC metrics)  
 ### use the standard QC metrics to preprocess 
   for (i in samples){
-    seurat_list[[i]] <- subset(x = seurat_list[[i]], subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+    seurat_list[[i]] <- subset(x = seurat_list[[i]], subset = nFeature_RNA > round(quantile(seurat_list[[i]]@meta.data[["nFeature_RNA"]],c(0.2))) & nFeature_RNA < round(quantile(seurat_list[[i]]@meta.data[["nFeature_RNA"]],c(0.8))) & percent.mt < 5)
     print(i)
   }
 ### use customize QC metrics to preprocess   
