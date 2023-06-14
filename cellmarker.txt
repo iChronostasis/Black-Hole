@@ -1,0 +1,66 @@
+相关细胞的细胞标志物：
+T淋巴细胞亚群检测中的CD4 CD8 正常参考值：
+CD3：60-80% ； CD4：35-55% ； CD8：20-30% ；CD4/CD8比值：1.4-2.0
+CD4细胞在整个T淋巴细胞中占65%，CD8占35%，其比值为1.75—2.1。
+CD4 ／ CD8 比值异常： CD4 ／ CD8 的比值做为免疫调节的一项指标，正常值约 1.4 ～ 2.0 ，若其比值＞ 2.0 或＜ 1.4 ，表明细胞免疫功能紊乱。 
+CD4 ／ CD8 ＜ 1 ． 4 常见于: 恶性肿瘤
+人体感染了HIV后，免疫系统受到损伤，主要表现为CD4数量减少，CD8数量相对增多，比例失调，其比值小于1.0
+
+HSC造血干细胞：CYTL1，GATA2, CD34, CD117
+immune:  CD45+, PTPRC
+T 细胞: CD3D, CD3E, CD3G, CD4, CD8A, CD8 
+B 细胞: CD79A, CD79B, CD19, MS4A1 
+Naive B cell : CD19, MS4A1, IGHD,  IGHM , IL4R, TCL1A 
+Memory B cel : CD27, CD38, IGHG 
+B 浆细胞 Plasma _ B : MZB1, SDC1, IGHG1, CD79A, JCHAIN , XBP1 
+NK 细胞: KLRF1, NCAM1, NCR1, GNLY , NKG7, FCGR3A, FGFBP2, CX3CR1
+NK1(CD56+CD16-): NCAM1, GNLY , NKG7
+NK2(CD56-CD16+): FCGR3A, KLRF1
+髓系细胞 Myeloid : LYZ , CD68, MS4A6A, CD1E, IL3RA, LAMP3
+巨噬细胞 Macrophages：cSF1R, CD68, CD163, CD14
+classically M1: CD40,CD68, HLA-DR  [CD80,CD86,FCGR1A(CD64),FCGR2A(CD32)]
+alternatively M2:CD163, CCL18,CD68,MRC1(CD206)
+M1巨噬细胞吞噬细菌、病毒和癌细胞，并引起炎症。
+M2巨噬细胞促进组织从炎症中恢复过来，当M2巨噬细胞无法正常工作时，慢性炎症会导致诸如纤维化之类的疾病。
+
+单核细胞 Monocytes : S100A8, S100A9, CD68, LYZ 
+CD14单核细胞CD14_ Mono : CD14, LYZ 
+CD16单核细胞CD16_ Mono : LYZ , FCGR3A
+树突状细胞 Dendritic : IL3RA, THBD , CD1C, CD68, CD83, FCER1A, CST3
+髓源树突状细胞 mDC : CD1C, FCER1A
+浆样树突状细胞pDC：KLRD1, LILRA4, CLEC4C, IL3RA
+中性粒细胞 Neutrophil : FCGR3B, CXCR2
+肥大细胞 Mast: TPSAB1, KIT, CPA3, ENPP3
+血小板 Platelets: PPBP, GP9 
+血红细胞 Erythrocyte: HBA1, HBD, GYPA
+内皮细胞Endothelial: PECAM1(CD31+), VWF
+上皮细胞 Epithelial/cancer: EpCAM+, EPCAM
+epi or tumor: EPCAM, KRT19, PROM1, ALDH1A1, CD24
+淋巴细胞Lymphoid:
+基质细胞Stromal: CD10+,
+成纤维细胞Fibroblast：FGF7, MME
+
+正常的肺的上皮细胞可以分成如下所示的5个亚群：
+
+alveolar type I cell (AT1;  AGER+)
+alveolar type II cell (AT2;  SFTPA1)
+secretory club cell (Club;  SCGB1A1+)
+basal airway epithelial cells (Basal;  KRT17+)
+ciliated airway epithelial cells (Ciliated;  TPPP3+)
+
+肺部的构造：
+trachea气管 Bronchi支气管 Bronchiole细支气管 Alveolus肺泡
+
+小鼠气管和肺泡中的上皮细胞类型： 
+Basal 基底细胞 具有再生性 
+Goblet 杯状细胞 分泌黏蛋白 形成黏液层
+Ciliated 纤毛细胞 通过定向摆动 排除细菌或灰尘
+Club 分泌细胞 保护功能 通过分泌一些粘多糖，表面活性物质来等来保护呼吸道上皮，此外还能通过吞噬作用降解一些毒素
+Neuroendocrine 神经内分泌细胞 可能是检测低氧环境的感受器 此外也通过一些信号多肽的分泌调控周围上皮细胞的生长发育
+
+传统认为AT1细胞被看作是终末分化的细胞
+Moritomo桑介绍的第一个课题是关于肺发育过程中，Notch2如何影响ciliated cell和club cell的分化的。
+他证明了在发育过程中，分化为ciliated cell的细胞会表达且分泌Notch ligand Jag1，
+从而刺激边上表达Notch2的细胞的Notch通路，
+从而抑制这些细胞分化为ciliated cell的命运，而转而分化为club cell。
+在Notch2突变的小鼠中，发育中的呼吸道上皮就失去了Club cell
