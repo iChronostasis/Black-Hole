@@ -98,6 +98,7 @@
 
 
 ### 7.1 细胞成分图（堆积）
+library(ggsci)
   ggplot(cell.prop,aes(location,prop_each_loc,fill=cluster,alluvium=cluster))+
   geom_bar(stat="identity",width=0.5)+
   geom_alluvium()+
